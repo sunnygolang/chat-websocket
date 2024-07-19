@@ -33,6 +33,8 @@
                     <label for="message">Message:</label>
                     <input type="text" name="message" id="message" class="form-control" autocomplete="off">
                 </div>
+                <hr>    
+                <a href="javascript:void(0)" class="btn btn-outline-secondary" id="sendBtn">Send Message</a>
                 <input type="hidden" name="action" id="action">
                 <hr>
                 <div id="output" class="chatbox">
@@ -50,6 +52,9 @@
 </script>
 <script>
     let socket = null
+    let output = document.getElementById("output")
+    let userField = document.getElementById("username")
+    let messageField = document.getElementById("message")
 
     window.onbeforeunload = function() {
         console.log("Leaving")
@@ -90,16 +95,56 @@
                         })
                     }
                     break
+
+                case "broadcast":
+                    output.innerHTML = output.innerHTML + data.message + "<br>"
+                    break
             }
         }
 
-        let userInput = document.getElementById("username")
-        userInput.addEventListener("change", function() {
+        userField.addEventListener("change", function() {
             let jsonData = {}
             jsonData["action"] = "username"
             jsonData["username"] = this.value
             socket.send(JSON.stringify(jsonData))
         })
+
+        messageField.addEventListener("keydown", function(event) {
+            if (event.code == "Enter") {
+                if (!socket) {
+                    console.log("no connection")
+                    return false
+                }
+
+                if ((userField.value === "") || (messageField.value === "")) {
+                    alert("Fill out User and Message")
+                    return false
+                } else {
+                    sendMessage()
+                }
+
+                event.preventDefault()
+                event.stopPropagation()
+            }
+        })
+
+        document.getElementById("sendBtn").addEventListener("click", function() {
+            if ((userField.value === "") || (messageField.value === "")) {
+                alert("Fill out User and Message")
+                return false
+            } else {
+                sendMessage()
+            }
+        })
     })
+
+    function sendMessage() {
+        let jsonData = {}
+        jsonData["action"] = "broadcast"
+        jsonData["username"] = userField.value
+        jsonData["message"] = messageField.value
+        socket.send(JSON.stringify(jsonData))
+        messageField.value = ""
+    }
 </script>
 </html>
